@@ -1,0 +1,99 @@
+_schema-version: "3.2"
+ID: standaloneapp
+version: 0.0.3
+modules:
+- name: standaloneapp-app-content
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: standaloneapp-repo-host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - treinamentostandaloneapp.zip
+      name: treinamentostandaloneapp
+      target-path: resources/
+- name: treinamentostandaloneapp
+  type: html5
+  path: standaloneapp
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+- name: standaloneapp-approuter
+  type: approuter.nodejs
+  path: standaloneapp-approuter
+  requires:
+# adicionados destination e connectivity no módulo do approuter
+  - name: dest_standaloneapp
+  - name: conn_standaloneapp
+  - name: standaloneapp_html_repo_runtime
+  - name: uaa_standaloneapp
+  parameters:
+    disk-quota: 256M
+    memory: 256M
+# deployer duplicado, comentado
+# - name: standaloneapp_ui_deployer
+#   type: com.sap.application.content
+#   path: .
+#   requires:
+#   - name: standaloneapp_html_repo_host
+#     parameters:
+#       content-target: true
+resources:
+- name: standaloneapp-repo-host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: standaloneapp-html5-srv
+    service-plan: app-host
+# comentado serviço de destination incorreto
+# - name: standaloneapp-destination-service
+#   type: org.cloudfoundry.managed-service
+#   parameters:
+#     config:
+#       HTML5Runtime_enabled: false
+#       init_data:
+#         instance:
+#           destinations:
+#           - Authentication: NoAuthentication
+#             Name: ui5
+#             ProxyType: Internet
+#             Type: HTTP
+#             URL: https://ui5.sap.com
+#           existing_destinations_policy: update
+#       version: 1.0.0
+#     service: destination
+#     service-name: standaloneapp-destination-service
+#     service-plan: lite
+# adicionamos connectivity e destination corretos
+- name: conn_standaloneapp
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: connectivity
+    service-plan: lite
+- name: dest_standaloneapp
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: destination
+    service-plan: lite
+- name: standaloneapp_html_repo_runtime
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-plan: app-runtime
+- name: uaa_standaloneapp
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: standaloneapp-xsuaa-service
+    service-plan: application
+parameters:
+  deploy_mode: html5-repo
